@@ -1,0 +1,157 @@
+/*
+ * A widget production factory
+ * October 2012
+ * 
+ * Adapted from EE585 Notes, Ron Smith, 2001
+ */
+
+model widgetProduction {
+	
+	/*
+	 * The top capsule, containing instances of other 
+	 * capsules and their connectors
+	 */
+	root capsule SystemContainer {
+		capsuleRef controlSoftwareRef: ControlSoftware
+		capsuleRef productionLineRef: ProductionLine
+		connector controlSoftwareRef.CS2RobotPort and productionLineRef.toobotPort
+		connector controlSoftwareRef.CS2WSPort and productionLineRef.toWSPort
+	}
+	
+	/*
+	 * Controller
+	 */
+	capsule ControlSoftware {
+		external port CS2WSPort: WorkstationProtocol
+		external port CS2RobotPort: RobotProtocol
+		timerPort StartTimer
+		timerPort StopTimer
+		logPort CSLog
+		attribute startUpDelay := 2000
+		attribute systemStopTime := 3000
+		stateMachine {
+			transition init: initial -> startup {}
+			state startup  { 
+				entry { 
+					inform StartTimer in startUpDelay
+				}
+			}
+			state produce  { 
+				entry { 
+					send CS2WSPort.produceWidget()
+				}
+			}
+			state deliver  { 
+				entry { 
+					send CS2RobotPort.deliverWidget()
+				}
+			}
+			state shutDown { 
+				entry { 
+					send CS2WSPort.shutDown() and CS2RobotPort.shutDown()
+				}
+			}
+			entryPoint entryStop			
+			transition start: startup -> produce { 
+				triggers timeout StartTimer
+			}				
+			transition deliverMe: produce -> deliver {
+				triggers CS2WSPort.widgetProduced() 
+			}
+			transition goAgain: deliver -> produce {
+				triggers CS2RobotPort.widgetDelivered() 
+			}
+			transition stop: my entryStop -> shutDown { 
+				triggers timeout StopTimer
+			}
+		} 
+	}
+	
+	/*
+	 * The capsule that produces things
+	 */
+	capsule ProductionLine{
+		external port~ toWSPort: WorkstationProtocol
+		external port~ toobotPort: RobotProtocol
+		capsuleRef workstationRef: Workstation
+		capsuleRef robotRef: Robot
+		connector toWSPort and workstationRef.WS2CSPort 
+		connector toobotPort and robotRef.Robot2CSPort 
+	}
+	
+	capsule Workstation {
+		external port~ WS2CSPort: WorkstationProtocol
+		timerPort ProductionTimer
+		logPort WSLog
+		attribute widgetProductionTime = 3000
+		stateMachine {
+			state standby  
+			state producing   { 
+				entry { 
+					inform ProductionTimer in widgetProductionTime
+				}
+			}
+			state shutDown    
+			entryPoint entryStop
+			transition t1: initial -> standby {}
+			transition begin: standby -> producing {
+				triggers WS2CSPort.produceWidget ()
+			}
+			transition finished: producing -> standby {
+				triggers timeout ProductionTimer
+				action { 
+				send WS2CSPort.widgetProduced()  }
+			}
+			transition stop: my entryStop -> shutDown {
+				triggers WS2CSPort.shutDown() 
+			}
+		}
+	}
+	capsule Robot {
+		external port~ Robot2CSPort: RobotProtocol
+		timerPort DeliveryTimer
+		logPort RobotLog
+		attribute widgetDeliveringTime = 5000
+		stateMachine {
+			state standby
+			state delivering  { 
+				entry { 
+					inform DeliveryTimer in widgetDeliveringTime
+				}
+			}
+			state shutDown
+			entryPoint entryStop
+			transition init: initial -> standby {}
+			transition start: standby -> delivering {
+				triggers Robot2CSPort.deliverWidget() 
+			}
+			transition finished: delivering -> standby {
+				triggers timeout DeliveryTimer
+				action { 
+					send Robot2CSPort.widgetDelivered() 
+				} 
+			}
+			transition stop: my entryStop -> shutDown {
+				triggers Robot2CSPort.shutDown()
+			}
+		}
+	}
+	protocol WorkstationProtocol{
+		incoming { 
+			widgetProduced()
+		} 
+		outgoing {	
+			produceWidget()
+			shutDown()
+		} 
+	}
+	protocol RobotProtocol { 
+		incoming {
+			widgetDelivered()
+		} 
+		outgoing {
+			deliverWidget()
+			shutDown()  
+		}
+	}
+}

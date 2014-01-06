@@ -1,0 +1,288 @@
+/*
+ * Parcel Router
+ * October 2012
+ * 
+ * This example illustrates a parcel router.  The parcel router first generates 
+ * packages for every 4 second; then, it delivers the packages into 4 bins.  
+ */
+model ParcelRouter {
+	protocol SensorProtocol {
+		incoming {
+		}
+		outgoing {
+			sendDirection(leftNotRight)
+		}
+	}
+	protocol ParcelPassage {
+		incoming {
+		}
+		outgoing {
+			sendParcel(parcelId, destinationCode)
+		}
+	}
+	protocol LevelNumberProtocol {
+		incoming {
+		}
+		outgoing {
+			sendLevelNumber(level)
+		}
+	}
+	root capsule Top {
+		capsuleRef generator : Generator
+		capsuleRef stage0 : Stage
+		capsuleRef stage1 : Stage
+		capsuleRef stage2 : Stage
+		capsuleRef bin0 : Bin
+		capsuleRef bin1 : Bin
+		capsuleRef bin2 : Bin
+		capsuleRef bin3 : Bin
+		connector generator.gettingOut and stage0.goingIn
+		connector stage0.gettingOutRight and stage1.goingIn
+		connector stage0.gettingOutLeft and stage2.goingIn
+		connector stage1.gettingOutRight and bin0.goingIn
+		connector stage1.gettingOutLeft and bin1.goingIn
+		connector stage2.gettingOutRight and bin2.goingIn
+		connector stage2.gettingOutLeft and bin3.goingIn
+		port toStage0 : LevelNumberProtocol
+		port toStage1 : LevelNumberProtocol
+		port toStage2 : LevelNumberProtocol
+		connector toStage0 and stage0.fromTop
+		connector toStage1 and stage1.fromTop
+		connector toStage2 and stage2.fromTop
+		stateMachine {
+			state single
+			transition init : initial -> single {
+				action {
+					send toStage0.sendLevelNumber(0)
+					send toStage1.sendLevelNumber(1)
+					send toStage2.sendLevelNumber(1)
+				}
+			}
+		}
+	}
+	capsule Generator {
+		external port gettingOut : ParcelPassage
+		timerPort timer
+		logPort logger
+		attribute timeoutPeriod := 4000
+		attribute sent := false
+		stateMachine {
+			state single
+			transition init : initial -> single {
+				action {
+					inform timer in timeoutPeriod
+				}
+			}
+			transition sending : single -> single {
+				triggers timeout timer
+				action {
+					if (!sent) {
+						var i := 1
+						var k := 3
+						send gettingOut.sendParcel(i, k)
+						log logger with "generator sending out a parcel"
+						sent := true
+					}
+				}
+			}
+		}
+	}
+	capsule Stage {
+		external port ~goingIn : ParcelPassage
+		external port gettingOutRight : ParcelPassage
+		external port gettingOutLeft : ParcelPassage
+		external port ~fromTop : LevelNumberProtocol
+		port toSensorController : LevelNumberProtocol
+		logPort logger
+		attribute level
+		capsuleRef chute0 : Chute
+		capsuleRef chute1 : Chute
+		capsuleRef sensorCntl : SensorController
+		capsuleRef switch : Switch
+		connector goingIn and chute0.enter
+		connector chute0.leave and chute1.enter
+		connector chute0.leave and sensorCntl.sense
+		connector chute1.leave and switch.enter
+		connector sensorCntl.setSwitch and switch.setSwitch
+		connector switch.leaveLeft and gettingOutLeft
+		connector switch.leaveRight and gettingOutRight
+		connector toSensorController and sensorCntl.fromStage
+		stateMachine {
+			state single
+			transition init : initial -> single {
+			}
+			transition setLevelNumber : single -> single {
+				triggers fromTop.sendLevelNumber(levelNumber)
+				action {
+					level := levelNumber
+					log logger with "got level number " ^ level
+					send toSensorController.sendLevelNumber(levelNumber)
+				}
+			}
+		}
+
+		//		attribute rightNotLeft: boolean = false 
+		//		operation hello(s:int): void {
+		//			noop
+		//		}
+		//		stateMachine {
+		//			state single
+		//			transition init: initial -> single {
+		//			}
+		//			transition sendParcel: single -> single {
+		//				triggers goingIn.sendParcel(parcel)
+		//				action {
+		//					if rightNotLeft == true {
+		//						send gettingOutRight.sendParcel(p, q, r )
+		//						rightNotLeft := hello()
+		//					} else {
+		//						send gettingOutLeft.sendParcel()
+		//						rightNotLeft := true
+		//					}
+		//				}
+		//			}
+		//		}
+
+	}
+	capsule Bin {
+		external port ~goingIn : ParcelPassage
+		attribute numOfParcels := 0
+		logPort logger
+		stateMachine {
+			state single
+			transition init : initial -> single {
+			}
+			transition sending : single -> single {
+				triggers goingIn.sendParcel(parcelId, designatedBin)
+				action {
+					numOfParcels := numOfParcels + 1
+					log logger with "a parcel with id " ^ parcelId ^ " has entered bin"
+				}
+			}
+		}
+	}
+	capsule Chute {
+		external port ~enter : ParcelPassage
+		external port leave : ParcelPassage
+		logPort logger
+		timerPort timer
+		attribute storedParcelId := -1
+		attribute storedParcelDestination := -1
+		attribute timeoutPeriod := 2000
+		stateMachine {
+			state empty
+			state entered
+			transition init : initial -> empty {
+			}
+			transition parcelEnters : empty -> entered {
+				triggers enter.sendParcel(parcelId, destination)
+				action {
+					storedParcelId := parcelId
+					storedParcelDestination := destination
+					log logger with "received parcel ID " ^ parcelId ^ " to destination " ^ destination
+					inform timer in timeoutPeriod
+					log logger with "informing timer for " ^ timeoutPeriod / 1000 ^ " seconds"
+				}
+			}
+			transition parcelLeaves : entered -> empty {
+				triggers timeout timer
+				action {
+					send leave.sendParcel(storedParcelId, storedParcelDestination)
+					log logger with "sending parcel with id " ^ storedParcelId ^ " to " ^ storedParcelDestination
+					storedParcelId := -1
+					storedParcelDestination := -1
+				}
+			}
+		}
+	}
+	capsule Switch {
+		external port ~setSwitch : SensorProtocol
+		external port ~enter : ParcelPassage
+		external port leaveLeft : ParcelPassage
+		external port leaveRight : ParcelPassage
+		timerPort timer
+		logPort logger
+		attribute leftNotRight := true
+		attribute timeoutPeriod := 2000
+		attribute storedParcelId := -1
+		attribute storedParcelDestination := -1
+		stateMachine {
+			state empty
+			state entered
+			transition init : initial -> empty {
+			}
+			transition setDirectionWhileEmpty : empty -> empty {
+				triggers setSwitch.sendDirection(direction)
+				action {
+					leftNotRight := direction
+				}
+			}
+			transition setDirectionWhileEntered : entered -> entered {
+				triggers setSwitch.sendDirection(direction)
+				action {
+					leftNotRight := direction
+				}
+			}
+			transition parcelEnters : empty -> entered {
+				triggers enter.sendParcel(parcelId, destination)
+				action {
+					storedParcelId := parcelId
+					storedParcelDestination := destination
+					log logger with "parcelId " ^ parcelId ^ " entered, sending to " ^ destination
+					inform timer in timeoutPeriod
+				}
+			}
+			transition parcelLeaves : entered -> empty {
+				triggers timeout timer
+				action {
+					if leftNotRight {
+						send leaveLeft.sendParcel(storedParcelId, storedParcelDestination)
+					} else  {
+						send leaveRight.sendParcel(storedParcelId, storedParcelDestination)
+					}
+				}
+			}
+		}
+	}
+	capsule SensorController {
+		external port ~sense : ParcelPassage
+		external port setSwitch : SensorProtocol
+		external port ~fromStage : LevelNumberProtocol
+		attribute level
+		attribute key
+		operation magicalKey(destination, level) {
+			var key := destination
+			var counter := 0
+			while (counter < level) {
+				key := key / 2
+			}
+			if (key % 2 == 1) {
+				return 1
+			} else  {
+				return 0
+			}
+		}
+		stateMachine {
+			state single
+			transition init : initial -> single {
+			}
+			transition setLevelNumber : single -> single {
+				triggers fromStage.sendLevelNumber(levelNumber)
+				action {
+					level := levelNumber
+				}
+			}
+			transition senseParcel : single -> single {
+				triggers sense.sendParcel(parcelId, destination)
+				action {
+					key := magicalKey(destination, level)
+					if key == 0 {
+						send setSwitch.sendDirection(false)
+					} else  {
+						send setSwitch.sendDirection(true)
+					}
+				}
+			}
+		}
+	}
+}

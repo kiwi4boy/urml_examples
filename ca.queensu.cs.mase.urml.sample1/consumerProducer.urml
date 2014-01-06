@@ -1,0 +1,44 @@
+model consumerProducer {
+	root capsule Top {
+		capsuleRef p: Producer
+		capsuleRef c: Consumer
+		connector p.port1 and c.port2
+	}
+	capsule Producer {
+		external port port1: Comm
+		logPort logger
+		stateMachine {
+			state x
+			transition t1: initial -> x { 
+				action { 
+					send port1.ySignal() 
+					log logger with "sent ySignal to port1"
+				}
+			}
+		}
+	}
+	capsule Consumer {
+		external port~ port2: Comm
+		logPort logger
+		stateMachine {
+			state x
+			state y
+			transition t2: initial -> x {  
+			}
+			transition t3: x -> y {
+				triggers port2.ySignal()
+				action {
+					log logger with "ySignal received from port2" 
+				}
+			}
+		}	
+	}
+	protocol Comm { 
+		incoming { 
+			xSignal()
+		}
+		outgoing { 
+			ySignal()
+		}
+	}
+}

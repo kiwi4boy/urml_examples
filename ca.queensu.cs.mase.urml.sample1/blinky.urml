@@ -1,0 +1,114 @@
+/*
+ * A blinking yellow light
+ * October 2012
+ * 
+ * This example involves a yellow light that blinks.  The yellow light blinks by turning on
+ * for 1 second and then off for 1 second.  Additionally, the yellow light proceeds a cycle
+ * of alternately blinking for 5 seconds and stop blinking for 5 seconds.
+ */
+model Blinky {
+
+/*
+	 * The top of the model that consists of Blinky, the blinking yellow light,
+	 * and its controller, which coordinates the blink-and-stop cycle.
+	 */
+	root capsule Top {
+		capsuleRef blinky : BlinkingLight
+		capsuleRef controller : Controller
+		connector blinky.connectToController and controller.connectToLight
+	}
+
+	/*
+	 * The blinking light blinks --- it turns on for 1 second and then off
+	 * for 1 second.
+	 */
+	capsule BlinkingLight {
+		external port connectToController : ControllerProtocol
+		timerPort onAndOff_Timer
+		logPort logger
+		attribute onAndOff_Period := 5000
+
+		/*
+		 * This state machine describes the cycle alternating between 
+		 * the light blinking and not blinking, which is coordinated by
+		 * the controller.
+		 */
+		stateMachine {
+			transition init : initial -> off {
+			}
+			transition t1 : off -> subOn {
+				triggers connectToController.start()
+			}
+			transition t2 : blinking -> off {
+				triggers connectToController.stop()
+			}
+			state off
+			state blinking {
+
+			/*
+				 * The yellow light is in blinking mode
+				 */
+				sub
+				stateMachine {
+				//					point tp0
+				//					transition tr0: exitPoint tp0 -> on {}
+					state subOn {
+						entry {
+							inform onAndOff_Timer in onAndOff_Period
+							log logger with "Car lights " ^ "turn to yellow for " ^ onAndOff_Period / 1000 ^ " seconds..."
+						}
+					}
+					transition on2off : subOn -> subOff {
+						triggers timeout onAndOff_Timer
+					}
+					state subOff {
+						entry {
+							inform onAndOff_Timer in onAndOff_Period
+							log logger with "Car lights turn off for " ^ onAndOff_Period / 1000 ^ "sec"
+						}
+					}
+					transition subOff2on : subOff -> subOn {
+						triggers timeout onAndOff_Timer
+					}
+					transition subInit : initial -> subOn {
+					}
+				}
+			}
+		}
+	}
+
+	/*
+	 * The controller makes sure that the yellow light blinks for 5 seconds and 
+	 * then stops blinking for 5 seconds.
+	 */
+	capsule Controller {
+		external port ~connectToLight : ControllerProtocol
+		timerPort blinkingCycleTimer
+		attribute blinkingCyclePeriod := 20000
+		stateMachine {
+			transition controllerInit : initial -> controllerOn {
+				action {
+					inform blinkingCycleTimer in blinkingCyclePeriod
+					send connectToLight.start()
+				}
+			}
+			transition controllerOn2off : controllerOn -> controllerOff {
+				triggers timeout blinkingCycleTimer
+				action {
+					send connectToLight.stop()
+				}
+			}
+			state controllerOn {
+			}
+			state controllerOff {
+			}
+		}
+	}
+	protocol ControllerProtocol {
+		incoming {
+			start() stop()
+		}
+		outgoing {
+		}
+	}
+}
