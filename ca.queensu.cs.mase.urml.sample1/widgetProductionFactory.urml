@@ -56,7 +56,6 @@ model widgetProduction {
 					log CSLog with "CS: shutDown"
 				}
 			}
-			//entryPoint entryStop			
 			transition start : startup -> produce {
 				triggers timeout StartTimer
 			}
@@ -111,7 +110,6 @@ model widgetProduction {
 					log WSLog with "WS: shutDown"
 				}
 			}
-			//entryPoint entryStop
 			transition t1 : initial -> standby {
 			}
 			transition begin : standby -> producing {
@@ -153,7 +151,6 @@ model widgetProduction {
 					log RobotLog with "Robot: shutDown"
 				}
 			}
-			//entryPoint entryStop
 			transition init : initial -> standby {
 			}
 			transition start : standby -> delivering {
