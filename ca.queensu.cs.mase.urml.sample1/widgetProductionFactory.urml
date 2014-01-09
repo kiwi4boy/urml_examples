@@ -61,7 +61,13 @@ model widgetProduction {
 			transition goAgain: deliver -> produce {
 				triggers CS2RobotPort.widgetDelivered() 
 			}
-			transition stop: entryStop -> shutDown { 
+			transition stop1: startup -> shutDown { 
+				triggers timeout StopTimer
+			}
+			transition stop2: produce -> shutDown {
+				triggers timeout StopTimer
+			}
+			transition stop3: deliver -> shutDown {
 				triggers timeout StopTimer
 			}
 		} 
@@ -102,8 +108,11 @@ model widgetProduction {
 				action { 
 				send WS2CSPort.widgetProduced()  }
 			}
-			transition stop: entryStop -> shutDown {
+			transition stop1: producing -> shutDown {
 				triggers WS2CSPort.shutDown() 
+			}
+			transition stop2: standby -> shutDown {
+				triggers WS2CSPort.shutDown()
 			}
 		}
 	}
@@ -131,7 +140,10 @@ model widgetProduction {
 					send Robot2CSPort.widgetDelivered() 
 				} 
 			}
-			transition stop: entryStop -> shutDown {
+			transition stop1: standby -> shutDown {
+				triggers Robot2CSPort.shutDown()
+			}
+			transition stop2: delivering -> shutDown {
 				triggers Robot2CSPort.shutDown()
 			}
 		}
