@@ -61,7 +61,13 @@ model DiningPhilosophers {
 		external port ~left : PhilosopherForkProtocol
 		external port ~right : PhilosopherForkProtocol
 		logPort logger
+		/* Boolean value that specifies that the philosopher on the left side of the
+		 * fork is waiting.
+		 */
 		attribute leftWaiting := false
+		/* Boolean value that specifies that the philosopher on the right side of the
+		 * fork is waiting
+		 */
 		attribute rightWaiting := false
 		stateMachine {
 			state down {
@@ -88,6 +94,10 @@ model DiningPhilosophers {
 					send right.ack()
 				}
 			}
+			/*
+			 * While already up, but asked to be picked up again,
+			 * set the waiting flag to true.
+			 */
 			transition pickUpFromLeftButIsAlreadyUp : up -> up {
 				triggers left.up()
 				action {
@@ -100,6 +110,10 @@ model DiningPhilosophers {
 					rightWaiting := true
 				}
 			}
+			/*
+			 * While already up, but the left/side is already waiting,
+			 * exchange the fork from left/right to right/left.
+			 */
 			transition switchFromLeftToRight : up -> up {
 				guard {
 					rightWaiting == true
@@ -111,12 +125,6 @@ model DiningPhilosophers {
 					log logger with "fork exchanged from left to right"
 				}
 			}
-			transition putDownForLeft : up -> down {
-				guard {
-					rightWaiting == false
-				}
-				triggers left.down()
-			}
 			transition switchFromRightToLeft : up -> up {
 				guard {
 					leftWaiting == true
@@ -127,6 +135,15 @@ model DiningPhilosophers {
 					leftWaiting := false
 					log logger with "fork exchanged from right to left"
 				}
+			}
+			/*
+			 * Put down the fork if asked and when left/right is not waiting.
+			 */
+			transition putDownForLeft : up -> down {
+				guard {
+					rightWaiting == false
+				}
+				triggers left.down()
 			}
 			transition putDownForRight : up -> down {
 				guard {

@@ -106,7 +106,8 @@ model Blinky {
 	}
 	protocol ControllerProtocol {
 		incoming {
-			start() stop()
+			start()
+			stop()
 		}
 		outgoing {
 		}

@@ -51,7 +51,7 @@ model widgetProduction {
 					send CS2WSPort.shutDown() and CS2RobotPort.shutDown()
 				}
 			}
-			entryPoint entryStop			
+			//entryPoint entryStop			
 			transition start: startup -> produce { 
 				triggers timeout StartTimer
 			}				
@@ -61,7 +61,7 @@ model widgetProduction {
 			transition goAgain: deliver -> produce {
 				triggers CS2RobotPort.widgetDelivered() 
 			}
-			transition stop: my entryStop -> shutDown { 
+			transition stop: entryStop -> shutDown { 
 				triggers timeout StopTimer
 			}
 		} 
@@ -83,7 +83,7 @@ model widgetProduction {
 		external port~ WS2CSPort: WorkstationProtocol
 		timerPort ProductionTimer
 		logPort WSLog
-		attribute widgetProductionTime = 3000
+		attribute widgetProductionTime := 3000
 		stateMachine {
 			state standby  
 			state producing   { 
@@ -92,7 +92,7 @@ model widgetProduction {
 				}
 			}
 			state shutDown    
-			entryPoint entryStop
+			//entryPoint entryStop
 			transition t1: initial -> standby {}
 			transition begin: standby -> producing {
 				triggers WS2CSPort.produceWidget ()
@@ -102,7 +102,7 @@ model widgetProduction {
 				action { 
 				send WS2CSPort.widgetProduced()  }
 			}
-			transition stop: my entryStop -> shutDown {
+			transition stop: entryStop -> shutDown {
 				triggers WS2CSPort.shutDown() 
 			}
 		}
@@ -111,7 +111,7 @@ model widgetProduction {
 		external port~ Robot2CSPort: RobotProtocol
 		timerPort DeliveryTimer
 		logPort RobotLog
-		attribute widgetDeliveringTime = 5000
+		attribute widgetDeliveringTime := 5000
 		stateMachine {
 			state standby
 			state delivering  { 
@@ -120,7 +120,7 @@ model widgetProduction {
 				}
 			}
 			state shutDown
-			entryPoint entryStop
+			//entryPoint entryStop
 			transition init: initial -> standby {}
 			transition start: standby -> delivering {
 				triggers Robot2CSPort.deliverWidget() 
@@ -131,7 +131,7 @@ model widgetProduction {
 					send Robot2CSPort.widgetDelivered() 
 				} 
 			}
-			transition stop: my entryStop -> shutDown {
+			transition stop: entryStop -> shutDown {
 				triggers Robot2CSPort.shutDown()
 			}
 		}
