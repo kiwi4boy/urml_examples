@@ -4,166 +4,191 @@
  * 
  * Adapted from EE585 Notes, Ron Smith, 2001
  */
-
 model widgetProduction {
-	
-	/*
+
+/*
 	 * The top capsule, containing instances of other 
 	 * capsules and their connectors
 	 */
 	root capsule SystemContainer {
-		capsuleRef controlSoftwareRef: ControlSoftware
-		capsuleRef productionLineRef: ProductionLine
+		capsuleRef controlSoftwareRef : ControlSoftware
+		capsuleRef productionLineRef : ProductionLine
 		connector controlSoftwareRef.CS2RobotPort and productionLineRef.toobotPort
 		connector controlSoftwareRef.CS2WSPort and productionLineRef.toWSPort
 	}
-	
+
 	/*
 	 * Controller
 	 */
 	capsule ControlSoftware {
-		external port CS2WSPort: WorkstationProtocol
-		external port CS2RobotPort: RobotProtocol
+		external port CS2WSPort : WorkstationProtocol
+		external port CS2RobotPort : RobotProtocol
 		timerPort StartTimer
 		timerPort StopTimer
 		logPort CSLog
 		attribute startUpDelay := 2000
-		attribute systemStopTime := 3000
+		attribute systemStopTime := 30000
 		stateMachine {
-			transition init: initial -> startup {}
-			state startup  { 
-				entry { 
+			transition init : initial -> startup {
+			}
+			state startup {
+				entry {
 					inform StartTimer in startUpDelay
+					inform StopTimer in systemStopTime
+					log CSLog with "CS: startup"
 				}
 			}
-			state produce  { 
-				entry { 
+			state produce {
+				entry {
 					send CS2WSPort.produceWidget()
+					log CSLog with "CS: produce"
 				}
 			}
-			state deliver  { 
-				entry { 
+			state deliver {
+				entry {
 					send CS2RobotPort.deliverWidget()
+					log CSLog with "CS: deliver"
 				}
 			}
-			state shutDown { 
-				entry { 
+			state shutDown {
+				entry {
 					send CS2WSPort.shutDown() and CS2RobotPort.shutDown()
+					log CSLog with "CS: shutDown"
 				}
 			}
 			//entryPoint entryStop			
-			transition start: startup -> produce { 
+			transition start : startup -> produce {
 				triggers timeout StartTimer
-			}				
-			transition deliverMe: produce -> deliver {
-				triggers CS2WSPort.widgetProduced() 
 			}
-			transition goAgain: deliver -> produce {
-				triggers CS2RobotPort.widgetDelivered() 
+			transition deliverMe : produce -> deliver {
+				triggers CS2WSPort.widgetProduced()
 			}
-			transition stop1: startup -> shutDown { 
+			transition goAgain : deliver -> produce {
+				triggers CS2RobotPort.widgetDelivered()
+			}
+			transition stop1 : startup -> shutDown {
 				triggers timeout StopTimer
 			}
-			transition stop2: produce -> shutDown {
+			transition stop2 : produce -> shutDown {
 				triggers timeout StopTimer
 			}
-			transition stop3: deliver -> shutDown {
+			transition stop3 : deliver -> shutDown {
 				triggers timeout StopTimer
 			}
-		} 
+		}
 	}
-	
+
 	/*
 	 * The capsule that produces things
 	 */
-	capsule ProductionLine{
-		external port~ toWSPort: WorkstationProtocol
-		external port~ toobotPort: RobotProtocol
-		capsuleRef workstationRef: Workstation
-		capsuleRef robotRef: Robot
-		connector toWSPort and workstationRef.WS2CSPort 
-		connector toobotPort and robotRef.Robot2CSPort 
+	capsule ProductionLine {
+		external port ~toWSPort : WorkstationProtocol
+		external port ~toobotPort : RobotProtocol
+		capsuleRef workstationRef : Workstation
+		capsuleRef robotRef : Robot
+		connector toWSPort and workstationRef.WS2CSPort
+		connector toobotPort and robotRef.Robot2CSPort
 	}
-	
 	capsule Workstation {
-		external port~ WS2CSPort: WorkstationProtocol
+		external port ~WS2CSPort : WorkstationProtocol
 		timerPort ProductionTimer
 		logPort WSLog
 		attribute widgetProductionTime := 3000
 		stateMachine {
-			state standby  
-			state producing   { 
-				entry { 
-					inform ProductionTimer in widgetProductionTime
+			state standby {
+				entry {
+					log WSLog with "WS: standby"
 				}
 			}
-			state shutDown    
+			state producing {
+				entry {
+					inform ProductionTimer in widgetProductionTime
+					log WSLog with "WS: producing"
+				}
+			}
+			state shutDown {
+				entry {
+					log WSLog with "WS: shutDown"
+				}
+			}
 			//entryPoint entryStop
-			transition t1: initial -> standby {}
-			transition begin: standby -> producing {
-				triggers WS2CSPort.produceWidget ()
+			transition t1 : initial -> standby {
 			}
-			transition finished: producing -> standby {
+			transition begin : standby -> producing {
+				triggers WS2CSPort.produceWidget()
+			}
+			transition finished : producing -> standby {
 				triggers timeout ProductionTimer
-				action { 
-				send WS2CSPort.widgetProduced()  }
+				action {
+					send WS2CSPort.widgetProduced()
+				}
 			}
-			transition stop1: producing -> shutDown {
-				triggers WS2CSPort.shutDown() 
+			transition stop1 : producing -> shutDown {
+				triggers WS2CSPort.shutDown()
 			}
-			transition stop2: standby -> shutDown {
+			transition stop2 : standby -> shutDown {
 				triggers WS2CSPort.shutDown()
 			}
 		}
 	}
 	capsule Robot {
-		external port~ Robot2CSPort: RobotProtocol
+		external port ~Robot2CSPort : RobotProtocol
 		timerPort DeliveryTimer
 		logPort RobotLog
 		attribute widgetDeliveringTime := 5000
 		stateMachine {
-			state standby
-			state delivering  { 
-				entry { 
-					inform DeliveryTimer in widgetDeliveringTime
+			state standby {
+				entry {
+					log RobotLog with "Robot: standby"
 				}
 			}
-			state shutDown
+			state delivering {
+				entry {
+					inform DeliveryTimer in widgetDeliveringTime
+					log RobotLog with "Robot: delivering"
+				}
+			}
+			state shutDown {
+				entry {
+					log RobotLog with "Robot: shutDown"
+				}
+			}
 			//entryPoint entryStop
-			transition init: initial -> standby {}
-			transition start: standby -> delivering {
-				triggers Robot2CSPort.deliverWidget() 
+			transition init : initial -> standby {
 			}
-			transition finished: delivering -> standby {
+			transition start : standby -> delivering {
+				triggers Robot2CSPort.deliverWidget()
+			}
+			transition finished : delivering -> standby {
 				triggers timeout DeliveryTimer
-				action { 
-					send Robot2CSPort.widgetDelivered() 
-				} 
+				action {
+					send Robot2CSPort.widgetDelivered()
+				}
 			}
-			transition stop1: standby -> shutDown {
+			transition stop1 : standby -> shutDown {
 				triggers Robot2CSPort.shutDown()
 			}
-			transition stop2: delivering -> shutDown {
+			transition stop2 : delivering -> shutDown {
 				triggers Robot2CSPort.shutDown()
 			}
 		}
 	}
-	protocol WorkstationProtocol{
-		incoming { 
+	protocol WorkstationProtocol {
+		incoming {
 			widgetProduced()
-		} 
-		outgoing {	
+		}
+		outgoing {
 			produceWidget()
 			shutDown()
-		} 
+		}
 	}
-	protocol RobotProtocol { 
+	protocol RobotProtocol {
 		incoming {
 			widgetDelivered()
-		} 
+		}
 		outgoing {
 			deliverWidget()
-			shutDown()  
+			shutDown()
 		}
 	}
 }
