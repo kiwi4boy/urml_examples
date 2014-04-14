@@ -3,8 +3,8 @@
  */
 model consumerProducer {
 	root capsule Top {
-		capsuleRef p : Producer
-		capsuleRef c : Consumer
+		capsuleInstance p : Producer
+		capsuleInstance c : Consumer
 		connector p.port1 and c.port2
 	}
 	capsule Producer {
@@ -13,8 +13,10 @@ model consumerProducer {
 		stateMachine {
 			state x
 			transition t1 : initial -> x {
+			}
+			transition t2 : x -> x {
 				action {
-					send port1.ySignal()
+					send port1.message()
 					log logger with "sent ySignal to port1"
 				}
 			}
@@ -25,11 +27,10 @@ model consumerProducer {
 		logPort logger
 		stateMachine {
 			state x
-			state y
 			transition t2 : initial -> x {
 			}
-			transition t3 : x -> y {
-				triggers port2.ySignal()
+			transition t3 : x -> x {
+				triggeredBy port2.message()
 				action {
 					log logger with "ySignal received from port2"
 				}
@@ -37,11 +38,8 @@ model consumerProducer {
 		}
 	}
 	protocol Comm {
-		incoming {
-			xSignal()
-		}
 		outgoing {
-			ySignal()
+			message()
 		}
 	}
 }

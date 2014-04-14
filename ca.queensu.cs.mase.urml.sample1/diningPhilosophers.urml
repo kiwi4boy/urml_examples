@@ -2,18 +2,21 @@
  * Dining Philosophers Example
  * October 2012
  * 
- * This example illustrates a story involving philosophers sharing forks.
+ * This example involves n philosophers sharing n forks, 
+ * where for each time a philosopher performs 
+ * its tasks, it needs 2 forks that is at its rights 
+ * and its left.
  */
 model DiningPhilosophers {
 /*
 	 * A container capsule that consists of a ring of philosophers and forks.
 	 */
 	root capsule PhilosophersRing {
-		capsuleRef phil0 : Philosopher
-		capsuleRef phil1 : Philosopher
-		capsuleRef phil2 : Philosopher
-		capsuleRef phil3 : Philosopher
-		capsuleRef phil4 : Philosopher
+		capsuleInstance phil0 : Philosopher
+		capsuleInstance phil1 : Philosopher
+		capsuleInstance phil2 : Philosopher
+		capsuleInstance phil3 : Philosopher
+		capsuleInstance phil4 : Philosopher
 		port phil0signer : RingPhilosopherProtocol
 		port phil1signer : RingPhilosopherProtocol
 		port phil2signer : RingPhilosopherProtocol
@@ -24,11 +27,11 @@ model DiningPhilosophers {
 		connector phil2signer and phil2.signer
 		connector phil3signer and phil3.signer
 		connector phil4signer and phil4.signer
-		capsuleRef fork0 : Fork
-		capsuleRef fork1 : Fork
-		capsuleRef fork2 : Fork
-		capsuleRef fork3 : Fork
-		capsuleRef fork4 : Fork
+		capsuleInstance fork0 : Fork
+		capsuleInstance fork1 : Fork
+		capsuleInstance fork2 : Fork
+		capsuleInstance fork3 : Fork
+		capsuleInstance fork4 : Fork
 		connector phil0.left and fork4.right
 		connector fork4.left and phil4.right
 		connector phil4.left and fork3.right
@@ -83,13 +86,13 @@ model DiningPhilosophers {
 			transition init : initial -> down {
 			}
 			transition pickUpFromLeft : down -> up {
-				triggers left.up()
+				triggeredBy left.up()
 				action {
 					send left.ack()
 				}
 			}
 			transition pickUpFromRight : down -> up {
-				triggers right.up()
+				triggeredBy right.up()
 				action {
 					send right.ack()
 				}
@@ -99,13 +102,13 @@ model DiningPhilosophers {
 			 * set the waiting flag to true.
 			 */
 			transition pickUpFromLeftButIsAlreadyUp : up -> up {
-				triggers left.up()
+				triggeredBy left.up()
 				action {
 					leftWaiting := true
 				}
 			}
 			transition pickUpFromRightButIsAlreadyUp : up -> up {
-				triggers right.up()
+				triggeredBy right.up()
 				action {
 					rightWaiting := true
 				}
@@ -118,7 +121,7 @@ model DiningPhilosophers {
 				guard {
 					rightWaiting == true
 				}
-				triggers left.down()
+				triggeredBy left.down()
 				action {
 					send right.ack()
 					rightWaiting := false
@@ -129,7 +132,7 @@ model DiningPhilosophers {
 				guard {
 					leftWaiting == true
 				}
-				triggers right.down()
+				triggeredBy right.down()
 				action {
 					send left.ack()
 					leftWaiting := false
@@ -143,13 +146,13 @@ model DiningPhilosophers {
 				guard {
 					rightWaiting == false
 				}
-				triggers left.down()
+				triggeredBy left.down()
 			}
 			transition putDownForRight : up -> down {
 				guard {
 					leftWaiting == false
 				}
-				triggers right.down()
+				triggeredBy right.down()
 			}
 		}
 	}
@@ -230,16 +233,16 @@ model DiningPhilosophers {
 			transition init : initial -> start {
 			}
 			transition setPhilID : start -> delay {
-				triggers signer.sign(num)
+				triggeredBy signer.sign(num)
 				action {
 					call setID(num)
 				}
 			}
 			transition startToThink : delay -> think {
-				triggers timeout delayTimer
+				triggeredBy timeout delayTimer
 			}
 			transition pickUpFirstFork : think -> pickingUpFirstFork {
-				triggers timeout thinkTimer
+				triggeredBy timeout thinkTimer
 				action {
 					if isEvenPhil() {
 						send right.up()
@@ -249,7 +252,7 @@ model DiningPhilosophers {
 				}
 			}
 			transition waitAckFromFirstFork : pickingUpFirstFork -> gotFirstFork {
-				triggers left.ack() or right.ack()
+				triggeredBy left.ack() or right.ack()
 			}
 			transition pickUpSecondFork : gotFirstFork -> pickingUpSecondFork {
 				action {
@@ -261,12 +264,12 @@ model DiningPhilosophers {
 				}
 			}
 			transition waitAckFromSecondFork : pickingUpSecondFork -> gotSecondFork {
-				triggers left.ack() or right.ack()
+				triggeredBy left.ack() or right.ack()
 			}
 			transition goEat : gotSecondFork -> eating {
 			}
 			transition putDownFirstFork : eating -> puttingDownFirstFork {
-				triggers timeout eatTimer
+				triggeredBy timeout eatTimer
 				action {
 					send left.down()
 				}

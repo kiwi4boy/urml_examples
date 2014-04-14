@@ -1,6 +1,6 @@
 model SampleModel {
 	root capsule Top {
-		capsuleRef ps : ProductionSystem
+		capsuleInstance ps : ProductionSystem
 	}
 	capsule ProductionSystem {
 		external port externalIn : StorageInProtocol
@@ -9,8 +9,8 @@ model SampleModel {
 		port ~internalOut : StorageOutProtocol
 		//	    connector internalOut and site0.storageOut
 		logPort logger
-		capsuleRef site0 : Storage
-		capsuleRef site1 : Storage
+		capsuleInstance site0 : Storage
+		capsuleInstance site1 : Storage
 		operation process() {
 			return 0
 		}

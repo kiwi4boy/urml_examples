@@ -13,8 +13,8 @@ model Blinky {
 	 * and its controller, which coordinates the blink-and-stop cycle.
 	 */
 	root capsule Top {
-		capsuleRef blinky : BlinkingLight
-		capsuleRef controller : Controller
+		capsuleInstance blinky : BlinkingLight
+		capsuleInstance controller : Controller
 		connector blinky.connectToController and controller.connectToLight
 	}
 
@@ -26,7 +26,7 @@ model Blinky {
 		external port connectToController : ControllerProtocol
 		timerPort onAndOff_Timer
 		logPort logger
-		attribute onAndOff_Period := 5000
+		attribute onAndOff_Period := 1000
 
 		/*
 		 * This state machine describes the cycle alternating between 
@@ -36,39 +36,35 @@ model Blinky {
 		stateMachine {
 			transition init : initial -> off {
 			}
-			transition t1 : off -> subOn {
-				triggers connectToController.start()
+			transition startBlinking : off -> subOn {
+				triggeredBy connectToController.start()
 			}
-			transition t2 : blinking -> off {
-				triggers connectToController.stop()
+			transition stopBlinking : blinking -> off {
+				triggeredBy connectToController.stop()
 			}
 			state off
-			state blinking {
-
 			/*
-				 * The yellow light is in blinking mode
-				 */
-				sub
-				stateMachine {
-				//					point tp0
-				//					transition tr0: exitPoint tp0 -> on {}
+			* The yellow light is in blinking mode
+			*/
+			state blinking {
+				sub stateMachine {
 					state subOn {
 						entry {
 							inform onAndOff_Timer in onAndOff_Period
-							log logger with "Car lights " ^ "turn to yellow for " ^ onAndOff_Period / 1000 ^ " seconds..."
+							log logger with "Lights " ^ "turn to yellow for " ^ onAndOff_Period / 1000 ^ " seconds..."
 						}
 					}
 					transition on2off : subOn -> subOff {
-						triggers timeout onAndOff_Timer
+						triggeredBy timeout onAndOff_Timer
 					}
 					state subOff {
 						entry {
 							inform onAndOff_Timer in onAndOff_Period
-							log logger with "Car lights turn off for " ^ onAndOff_Period / 1000 ^ "sec"
+							log logger with "Lights turn off for " ^ onAndOff_Period / 1000 ^ " seconds"
 						}
 					}
 					transition subOff2on : subOff -> subOn {
-						triggers timeout onAndOff_Timer
+						triggeredBy timeout onAndOff_Timer
 					}
 					transition subInit : initial -> subOn {
 					}
@@ -84,23 +80,35 @@ model Blinky {
 	capsule Controller {
 		external port ~connectToLight : ControllerProtocol
 		timerPort blinkingCycleTimer
-		attribute blinkingCyclePeriod := 20000
+		attribute blinkingCyclePeriod := 5000
+		logPort logger
 		stateMachine {
-			transition controllerInit : initial -> controllerOn {
+			transition init : initial -> on {
 				action {
 					inform blinkingCycleTimer in blinkingCyclePeriod
 					send connectToLight.start()
+					log logger with "connect to light start"
 				}
 			}
-			transition controllerOn2off : controllerOn -> controllerOff {
-				triggers timeout blinkingCycleTimer
+			transition on2off : on -> off {
+				triggeredBy timeout blinkingCycleTimer
 				action {
+					inform blinkingCycleTimer in blinkingCyclePeriod
 					send connectToLight.stop()
+					log logger with "Blinky stops blinking for " ^ blinkingCyclePeriod / 1000 ^ " seconds"
 				}
 			}
-			state controllerOn {
+			transition off2On : off -> on {
+				triggeredBy timeout blinkingCycleTimer
+				action {
+					inform blinkingCycleTimer in blinkingCyclePeriod
+					send connectToLight.start()
+					log logger with "Blinky blinks for " ^ blinkingCyclePeriod / 1000 ^ " seconds"
+				}
 			}
-			state controllerOff {
+			state on {
+			}
+			state off {
 			}
 		}
 	}

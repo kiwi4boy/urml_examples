@@ -11,8 +11,8 @@ model widgetProduction {
 	 * capsules and their connectors
 	 */
 	root capsule SystemContainer {
-		capsuleRef controlSoftwareRef : ControlSoftware
-		capsuleRef productionLineRef : ProductionLine
+		capsuleInstance controlSoftwareRef : ControlSoftware
+		capsuleInstance productionLineRef : ProductionLine
 		connector controlSoftwareRef.CS2RobotPort and productionLineRef.toobotPort
 		connector controlSoftwareRef.CS2WSPort and productionLineRef.toWSPort
 	}
@@ -50,7 +50,7 @@ model widgetProduction {
 					log CSLog with "CS: deliver"
 				}
 			}
-			state shutDown {
+			final state shutDown {
 				entry {
 					send CS2WSPort.shutDown() and CS2RobotPort.shutDown()
 					log CSLog with "CS: shutDown"
@@ -83,8 +83,8 @@ model widgetProduction {
 	capsule ProductionLine {
 		external port ~toWSPort : WorkstationProtocol
 		external port ~toobotPort : RobotProtocol
-		capsuleRef workstationRef : Workstation
-		capsuleRef robotRef : Robot
+		capsuleInstance workstationRef : Workstation
+		capsuleInstance robotRef : Robot
 		connector toWSPort and workstationRef.WS2CSPort
 		connector toobotPort and robotRef.Robot2CSPort
 	}
@@ -105,7 +105,7 @@ model widgetProduction {
 					log WSLog with "WS: producing"
 				}
 			}
-			state shutDown {
+			final state shutDown {
 				entry {
 					log WSLog with "WS: shutDown"
 				}
@@ -146,7 +146,7 @@ model widgetProduction {
 					log RobotLog with "Robot: delivering"
 				}
 			}
-			state shutDown {
+			final state shutDown {
 				entry {
 					log RobotLog with "Robot: shutDown"
 				}

@@ -1,0 +1,49 @@
+
+model DiningPhilosopher2 {
+	root capsule Capsule {
+		capsuleInstance phil0 : Philosopher
+		capsuleInstance phil1 : Philosopher
+		capsuleInstance phil2 : Philosopher
+		capsuleInstance fork0 : Fork
+		capsuleInstance fork1 : Fork
+		capsuleInstance fork2 : Fork
+		connector phil0.left and fork0.right
+		connector fork0.left and phil1.right
+		connector phil1.left and fork1.right
+		connector fork1.left and phil2.right
+		connector phil2.left and fork2.right
+		connector fork2.left and phil0.right
+	}
+	capsule Philosopher {
+		external port left : PhilosopherForkProtocol
+		external port right : PhilosopherForkProtocol
+		attribute leftAvail := false
+		attribute rightAvail := false
+		logPort logger
+		stateMachine {
+			state seek {
+				entry { send left.checkAvail() send right.checkAvail() }
+			}
+			
+		}
+	}
+	capsule Fork {
+		external port ~left : PhilosopherForkProtocol
+		external port ~right : PhilosopherForkProtocol
+		logPort logger
+		stateMachine {
+			
+		}
+	}
+	protocol PhilosopherForkProtocol {
+		incoming {
+			avail()
+			notAvail()
+		}
+		outgoing {
+			pick()
+			checkAvail()
+			drop()
+		}
+	}
+}

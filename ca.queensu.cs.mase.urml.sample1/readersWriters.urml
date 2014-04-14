@@ -19,13 +19,13 @@
  */
 model ReadersWriters {
 	root capsule Top {
-		capsuleRef r0 : Reader
-		capsuleRef r1 : Reader
-		capsuleRef r2 : Reader
-		capsuleRef w0 : Writer
-		capsuleRef w1 : Writer
-		capsuleRef c : Controller
-		capsuleRef db : Database
+		capsuleInstance r0 : Reader
+		capsuleInstance r1 : Reader
+		capsuleInstance r2 : Reader
+		capsuleInstance w0 : Writer
+		capsuleInstance w1 : Writer
+		capsuleInstance c : Controller
+		capsuleInstance db : Database
 		connector r0.fromController and c.fromR0
 		connector r1.fromController and c.fromR1
 		connector r2.fromController and c.fromR2
