@@ -26,152 +26,254 @@ model ReadersWriters {
 		capsuleInstance w1 : Writer
 		capsuleInstance c : Controller
 		capsuleInstance db : Database
-		connector r0.fromController and c.fromR0
-		connector r1.fromController and c.fromR1
-		connector r2.fromController and c.fromR2
-		connector w0.fromController and c.fromW0
-		connector w1.fromController and c.fromW1
-		connector r0.readThings and db.readThings
-		connector r1.readThings and db.readThings
-		connector r2.readThings and db.readThings
-		connector w0.writeThings and db.writeThings
-		connector w1.writeThings and db.writeThings
+		connector r0.con and c.r0
+		connector r1.con and c.r1
+		connector r2.con and c.r2
+		connector w0.con and c.w0
+		connector w1.con and c.w1
+		connector r0.read and db.read
+		connector r1.read and db.read
+		connector r2.read and db.read
+		connector w0.write and db.write
+		connector w1.write and db.write
 	}
 	capsule Controller {
 		attribute readers := 0
 		attribute writing := false
-		attribute w0wantsToWrite := false
-		attribute w1wantsToWrite := false
-		attribute r0wantsToWrite := false
-		attribute r1wantsToWrite := false
-		attribute r2wantsToWrite := false
+		attribute w0waiting := false
+		attribute w1waiting := false
+		attribute r0waiting := false
+		attribute r1waiting := false
+		attribute r2waiting := false
 		logPort logger
-		external port fromR0 : ControllerReader
-		external port fromR1 : ControllerReader
-		external port fromR2 : ControllerReader
-		external port fromW0 : ControllerWriter
-		external port fromW1 : ControllerWriter
+		external port r0 : ControllerRW
+		external port r1 : ControllerRW
+		external port r2 : ControllerRW
+		external port w0 : ControllerRW
+		external port w1 : ControllerRW
 		stateMachine {
 			state none
-			state writing
+			state writing {
+				entry {
+					log logger with "CONTROLLER WRITING"
+				}
+			}
 			state reading {
+				entry {
+					log logger with "CONTROLLER READING"
+				}
 			}
 			transition init : initial -> none {
 			}
-
 			transition askedWriteW0 : none -> writing {
 				guard {
-					readers == 0 && writing == false
+					readers == 0 && !writing
 				}
-				triggers fromW0.acquireWrite()
+				triggeredBy w0.acquireWrite()
 				action {
 					writing := true
 					log logger with "acquire write W0"
-					send fromW0.acknowledge()
+					send w0.acknowledge()
 				}
 			}
-			transition delayedAskedWriteW0 : none -> writing {
+			transition askedWriteW0A : none -> writing {
 				guard {
-					readers == 0 && !writing && w0wantsToWrite
+					readers == 0 && !writing && w0waiting
 				}
 				action {
 					writing := true
-					send fromW0.acknowledge()
-					w0wantsToWrite := false
+					send w0.acknowledge()
+					w0waiting := false
 				}
 			}
 			transition askedWriteW1 : none -> writing {
 				guard {
-					readers == 0 && writing == false
+					readers == 0 && !writing
 				}
-				triggers fromW1.acquireWrite()
+				triggeredBy w1.acquireWrite()
 				action {
 					writing := true
 					log logger with "acquire write W1"
-					send fromW1.acknowledge()
+					send w1.acknowledge()
 				}
 			}
-			transition delayedAskedWriteW1 : none -> writing {
+			transition askedWriteW1A : none -> writing {
 				guard {
-					readers == 0 && !writing && w1wantsToWrite
+					readers == 0 && !writing && w1waiting
 				}
 				action {
 					writing := true
-					send fromW1.acknowledge()
-					w1wantsToWrite := false
+					send w1.acknowledge()
+					w1waiting := false
 				}
 			}
 			transition askedReadR0 : none -> reading {
 				guard {
 					writing == false
 				}
-				triggers fromR0.acquireRead()
-								action {
+				triggeredBy r0.acquireRead()
+				action {
 					readers := 1
 					log logger with "acquire read R0"
-					send fromR0.acknowledge()
+					send r0.acknowledge()
 				}
 			}
 			transition askedReadR1 : none -> reading {
 				guard {
 					writing == false
 				}
-				triggers fromR1.acquireRead() 
+				triggeredBy r1.acquireRead()
 				action {
 					readers := 1
 					log logger with "acquire read R1"
-					send fromR1.acknowledge()
+					send r1.acknowledge()
 				}
 			}
 			transition askedReadR2 : none -> reading {
 				guard {
 					writing == false
 				}
-				triggers fromR2.acquireRead()
+				triggeredBy r2.acquireRead()
 				action {
 					readers := 1
-					log logger with "acquire read R2"
-					send fromR2.acknowledge()
+					log logger with "acquire read R2 with one reader"
+					send r2.acknowledge()
+				}
+			}
+			transition askedReadR0A : none -> reading {
+				guard {
+					!writing && r0waiting
+				}
+				action {
+					readers := 1
+					r0waiting := false
+					log logger with "acquire read R0 with one reader"
+					send r0.acknowledge()
+				}
+			}
+			transition askedReadR1A : none -> reading {
+				guard {
+					!writing && r1waiting
+				}
+				action {
+					readers := 1
+					r1waiting := false
+					log logger with "acquire read R1 with one reader"
+					send r1.acknowledge()
+				}
+			}
+			transition askedReadR2A : none -> reading {
+				guard {
+					!writing && r2waiting
+				}
+				action {
+					readers := 1
+					r2waiting := false
+					log logger with "acquire read R2 with one reader"
+					send r2.acknowledge()
 				}
 			}
 			transition multipleAskedReaderR0 : reading -> reading {
-				triggers fromR0.acquireRead()
+				triggeredBy r0.acquireRead()
 				action {
 					readers := readers + 1
-					log logger with "acquire read R0 " ^ readers
-					send fromR0.acknowledge()
+					log logger with "acquire read R0 with " ^ readers ^ " readers"
+					send r0.acknowledge()
 				}
 			}
 			transition multipleAskedReaderR1 : reading -> reading {
-				triggers fromR1.acquireRead()
+				triggeredBy r1.acquireRead()
 				action {
 					readers := readers + 1
-					log logger with "acquire read R1 " ^ readers
-					send fromR1.acknowledge()
+					log logger with "acquire read R1 with " ^ readers ^ " readers"
+					send r1.acknowledge()
 				}
 			}
 			transition multipleAskedReaderR2 : reading -> reading {
-				triggers fromR2.acquireRead()
+				triggeredBy r2.acquireRead()
 				action {
 					readers := readers + 1
-					log logger with "acquire read R2 " ^ readers
-					send fromR2.acknowledge()
+					log logger with "acquire read R2 with " ^ readers ^ " readers"
+					send r2.acknowledge()
 				}
 			}
-			transition w0request : reading -> reading {
-				triggers fromW0.acquireWrite()
+			transition multipleAskedReaderR0A : reading -> reading {
+				guard {
+					r0waiting
+				}
 				action {
-					w0wantsToWrite := true
+					readers := readers + 1
+					r0waiting := false
+					log logger with "acquire read R0 with " ^ readers ^ " readers"
+					send r0.acknowledge()
 				}
 			}
-			transition w1request : reading -> reading {
-				triggers fromW1.acquireWrite()
+			transition multipleAskedReaderR1A : reading -> reading {
+				guard {
+					r1waiting
+				}
 				action {
-					w1wantsToWrite := true
+					readers := readers + 1
+					r1waiting := false
+					log logger with "acquire read R1 with " ^ readers ^ " readers"
+					send r1.acknowledge()
+				}
+			}
+			transition multipleAskedReaderR2A : reading -> reading {
+				guard {
+					r2waiting
+				}
+				action {
+					readers := readers + 1
+					r2waiting := false
+					log logger with "acquire read R2 with " ^ readers ^ " readers"
+					send r2.acknowledge()
+				}
+			}
+			transition w0requestR : reading -> reading {
+				triggeredBy w0.acquireWrite()
+				action {
+					w0waiting := true
+				}
+			}
+			transition w0requestW : writing -> writing {
+				triggeredBy w0.acquireWrite()
+				action {
+					w0waiting := true
+				}
+			}
+			transition w1requestR : reading -> reading {
+				triggeredBy w1.acquireWrite()
+				action {
+					w1waiting := true
+				}
+			}
+			transition w1requestW : writing -> writing {
+				triggeredBy w1.acquireWrite()
+				action {
+					w1waiting := true
+				}
+			}
+			transition r0request : writing -> writing {
+				triggeredBy r0.acquireRead()
+				action {
+					r0waiting := true
+				}
+			}
+			transition r1request : writing -> writing {
+				triggeredBy r1.acquireRead()
+				action {
+					r1waiting := true
+				}
+			}
+			transition r2request : writing -> writing {
+				triggeredBy r2.acquireRead()
+				action {
+					r2waiting := true
 				}
 			}
 			transition releaseWrite : writing -> none {
-				triggers fromW0.releaseWrite() or fromW1.releaseWrite()
+				triggeredBy w0.releaseWrite() or w1.releaseWrite()
 				action {
 					writing := false
 					log logger with "release write"
@@ -181,27 +283,27 @@ model ReadersWriters {
 				guard {
 					readers > 1
 				}
-				triggers fromR0.releaseRead() or fromR1.releaseRead() or fromR2.releaseRead()
+				triggeredBy r0.releaseRead() or r1.releaseRead() or r2.releaseRead()
 				action {
 					readers := readers - 1
-					log logger with "release read " ^ readers
+					log logger with "release read with " ^ readers ^ " readers remaining"
 				}
 			}
 			transition releaseRead : reading -> none {
 				guard {
 					readers == 1
 				}
-				triggers fromR0.releaseRead() or fromR1.releaseRead() or fromR2.releaseRead()
+				triggeredBy r0.releaseRead() or r1.releaseRead() or r2.releaseRead()
 				action {
 					readers := 0
-					log logger with "release read 0"
+					log logger with "release read with no readers remaining"
 				}
 			}
 		}
 	}
 	capsule Reader {
-		external port ~fromController : ControllerReader
-		external port readThings : ReadAndWriteThings
+		external port ~con : ControllerRW
+		external port read : ReadAndWriteThings
 		attribute readRequestSent := false
 		timerPort timer
 		logPort logger
@@ -210,7 +312,7 @@ model ReadersWriters {
 			state notReading
 			state reading {
 				entry {
-					send readThings.read()
+					send read.read()
 					log logger with '' //cell
 
 				}
@@ -222,12 +324,12 @@ model ReadersWriters {
 					readRequestSent == false
 				}
 				action {
-					send fromController.acquireRead()
+					send con.acquireRead()
 					readRequestSent := true
 				}
 			}
 			transition goReading : notReading -> reading {
-				triggers fromController.acknowledge()
+				triggeredBy con.acknowledge()
 				action {
 					log logger with "goReading"
 					readRequestSent := false
@@ -235,25 +337,26 @@ model ReadersWriters {
 				}
 			}
 			transition backToNotReading : reading -> notReading {
-				triggers timeout timer
+				triggeredBy timeout timer
 				action {
-					send fromController.releaseRead()
+					send con.releaseRead()
 				}
 			}
 		}
 	}
 	capsule Writer {
-		external port ~fromController : ControllerWriter
-		external port writeThings : ReadAndWriteThings
+		external port ~con : ControllerRW
+		external port write : ReadAndWriteThings
 		attribute writeRequestSent := false
 		timerPort timer
 		logPort logger
-		attribute timeoutPeriod := 2000
+		attribute timeoutPeriod := 200
 		stateMachine {
 			state notWriting
 			state writing {
 				entry {
-					send writeThings.write(timeoutPeriod)
+					log logger with "writing 1234"
+					send write.write(1234)
 				}
 			}
 			transition init : initial -> notWriting {
@@ -263,12 +366,12 @@ model ReadersWriters {
 					writeRequestSent == false
 				}
 				action {
-					send fromController.acquireWrite()
+					send con.acquireWrite()
 					writeRequestSent := true
 				}
 			}
 			transition goWriting : notWriting -> writing {
-				triggers fromController.acknowledge()
+				triggeredBy con.acknowledge()
 				action {
 					writeRequestSent := false
 					log logger with "goWriting"
@@ -276,16 +379,16 @@ model ReadersWriters {
 				}
 			}
 			transition backToNotWriting : writing -> notWriting {
-				triggers timeout timer
+				triggeredBy timeout timer
 				action {
-					send fromController.releaseWrite()
+					send con.releaseWrite()
 				}
 			}
 		}
 	}
 	capsule Database {
-		external port ~readThings : ReadAndWriteThings
-		external port ~writeThings : ReadAndWriteThings
+		external port ~read : ReadAndWriteThings
+		external port ~write : ReadAndWriteThings
 		logPort logger
 		attribute thing := 1
 		stateMachine {
@@ -293,13 +396,13 @@ model ReadersWriters {
 			transition init : initial -> single {
 			}
 			transition readData : single -> single {
-				triggers readThings.read()
+				triggeredBy read.read()
 				action {
 					log logger with "read: " ^ thing
 				}
 			}
 			transition writeData : single -> single {
-				triggers writeThings.write(data)
+				triggeredBy write.write(data)
 				action {
 					log logger with "original: " ^ thing
 					thing := data
@@ -308,17 +411,10 @@ model ReadersWriters {
 			}
 		}
 	}
-	protocol ControllerReader {
+	protocol ControllerRW {
 		incoming {
 			acquireRead()
 			releaseRead()
-		}
-		outgoing {
-			acknowledge()
-		}
-	}
-	protocol ControllerWriter {
-		incoming {
 			acquireWrite()
 			releaseWrite()
 		}

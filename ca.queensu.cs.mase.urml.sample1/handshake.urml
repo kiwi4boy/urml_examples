@@ -12,9 +12,10 @@ model consumerProducer {
 		logPort logger
 		stateMachine {
 			state x
+			final state y
 			transition t1 : initial -> x {
 			}
-			transition t2 : x -> x {
+			transition t2 : x -> y {
 				action {
 					send port1.message()
 					log logger with "sent ySignal to port1"
@@ -27,9 +28,10 @@ model consumerProducer {
 		logPort logger
 		stateMachine {
 			state x
+			final state y
 			transition t2 : initial -> x {
 			}
-			transition t3 : x -> x {
+			transition t3 : x -> y {
 				triggeredBy port2.message()
 				action {
 					log logger with "ySignal received from port2"

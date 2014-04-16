@@ -24,7 +24,7 @@ model SampleModel {
 			transition : initial -> single {
 			}
 			transition t2 : single -> single {
-				triggers internalOut.output(x)
+				triggeredBy internalOut.output(x)
 				action {
 					call process()
 					send internalIn.input(0)
@@ -61,7 +61,7 @@ model SampleModel {
 				guard {
 					size > 0
 				}
-				triggers storageOut.request()
+				triggeredBy storageOut.request()
 				action {
 					log logger with "trigger remove"
 					call remove()
@@ -72,7 +72,7 @@ model SampleModel {
 				guard {
 					size < N
 				}
-				triggers storageIn.input(x)
+				triggeredBy storageIn.input(x)
 				action {
 					log logger with "trigger insert"
 					call insertPiece(0)

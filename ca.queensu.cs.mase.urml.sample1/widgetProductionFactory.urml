@@ -11,10 +11,10 @@ model widgetProduction {
 	 * capsules and their connectors
 	 */
 	root capsule SystemContainer {
-		capsuleInstance controlSoftwareRef : ControlSoftware
-		capsuleInstance productionLineRef : ProductionLine
-		connector controlSoftwareRef.CS2RobotPort and productionLineRef.toobotPort
-		connector controlSoftwareRef.CS2WSPort and productionLineRef.toWSPort
+		capsuleInstance controlSoftware : ControlSoftware
+		capsuleInstance productionLine : ProductionLine
+		connector controlSoftware.CS2RobotPort and productionLine.toobotPort
+		connector controlSoftware.CS2WSPort and productionLine.toWSPort
 	}
 
 	/*
@@ -57,22 +57,22 @@ model widgetProduction {
 				}
 			}
 			transition start : startup -> produce {
-				triggers timeout StartTimer
+				triggeredBy timeout StartTimer
 			}
 			transition deliverMe : produce -> deliver {
-				triggers CS2WSPort.widgetProduced()
+				triggeredBy CS2WSPort.widgetProduced()
 			}
 			transition goAgain : deliver -> produce {
-				triggers CS2RobotPort.widgetDelivered()
+				triggeredBy CS2RobotPort.widgetDelivered()
 			}
 			transition stop1 : startup -> shutDown {
-				triggers timeout StopTimer
+				triggeredBy timeout StopTimer
 			}
 			transition stop2 : produce -> shutDown {
-				triggers timeout StopTimer
+				triggeredBy timeout StopTimer
 			}
 			transition stop3 : deliver -> shutDown {
-				triggers timeout StopTimer
+				triggeredBy timeout StopTimer
 			}
 		}
 	}
@@ -113,19 +113,19 @@ model widgetProduction {
 			transition t1 : initial -> standby {
 			}
 			transition begin : standby -> producing {
-				triggers WS2CSPort.produceWidget()
+				triggeredBy WS2CSPort.produceWidget()
 			}
 			transition finished : producing -> standby {
-				triggers timeout ProductionTimer
+				triggeredBy timeout ProductionTimer
 				action {
 					send WS2CSPort.widgetProduced()
 				}
 			}
 			transition stop1 : producing -> shutDown {
-				triggers WS2CSPort.shutDown()
+				triggeredBy WS2CSPort.shutDown()
 			}
 			transition stop2 : standby -> shutDown {
-				triggers WS2CSPort.shutDown()
+				triggeredBy WS2CSPort.shutDown()
 			}
 		}
 	}
@@ -154,19 +154,19 @@ model widgetProduction {
 			transition init : initial -> standby {
 			}
 			transition start : standby -> delivering {
-				triggers Robot2CSPort.deliverWidget()
+				triggeredBy Robot2CSPort.deliverWidget()
 			}
 			transition finished : delivering -> standby {
-				triggers timeout DeliveryTimer
+				triggeredBy timeout DeliveryTimer
 				action {
 					send Robot2CSPort.widgetDelivered()
 				}
 			}
 			transition stop1 : standby -> shutDown {
-				triggers Robot2CSPort.shutDown()
+				triggeredBy Robot2CSPort.shutDown()
 			}
 			transition stop2 : delivering -> shutDown {
-				triggers Robot2CSPort.shutDown()
+				triggeredBy Robot2CSPort.shutDown()
 			}
 		}
 	}

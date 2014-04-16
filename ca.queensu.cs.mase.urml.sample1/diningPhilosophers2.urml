@@ -1,4 +1,3 @@
-
 model DiningPhilosopher2 {
 	root capsule Capsule {
 		capsuleInstance phil0 : Philosopher
@@ -19,49 +18,122 @@ model DiningPhilosopher2 {
 		external port right : PhilosopherForkProtocol
 		logPort logger
 		stateMachine {
-			transition init: initial -> think {}
-			state think { entry { log logger with "think" 
-				send left.checkAvail()
-				send right.checkAvail() } }
+			transition init : initial -> think {
+			}
+			state think {
+				entry {
+					log logger with "think"
+					send left.checkAvail()
+					send right.checkAvail()
+				}
+			}
 			transition reask1L : think -> think {
 				triggeredBy left.notAvail()
-				action { send left.checkAvail() log logger with "reask1L" }}
+				action {
+					send left.checkAvail()
+					log logger with "reask1L"
+				}
+			}
 			transition pick1L : think -> pickedL {
 				triggeredBy left.avail()
-				action { send left.pick() log logger with "pick1L"}}
-			state pickedL { entry { log logger with "pickedL"
-				send right.checkAvail() }}
+				action {
+					send left.pick()
+					log logger with "pick1L"
+				}
+			}
+			state pickedL {
+				entry {
+					log logger with "pickedL"
+					send right.checkAvail()
+				}
+			}
 			transition reask2R : pickedL -> pickedL {
 				triggeredBy right.notAvail()
-				action { send right.checkAvail() log logger with "reask2R"}}				
+				action {
+					send right.checkAvail()
+					log logger with "reask2R"
+				}
+			}
 			transition pick2R : pickedL -> eat {
 				triggeredBy right.avail()
-				action { send right.pick() log logger with "pick2R"}}
+				action {
+					send right.pick()
+					log logger with "pick2R"
+				}
+			}
 			transition reask1R : think -> think {
 				triggeredBy right.notAvail()
-				action { send right.checkAvail() log logger with "reask1r"}}
+				action {
+					send right.checkAvail()
+					log logger with "reask1r"
+				}
+			}
 			transition pick1R : think -> pickedR {
 				triggeredBy right.avail()
-				action { send right.pick() log logger with "pick1R"}}
-			state pickedR { entry { log logger with "pickedR"
-				send left.checkAvail() }}
+				action {
+					send right.pick()
+					log logger with "pick1R"
+				}
+			}
+			state pickedR {
+				entry {
+					log logger with "pickedR"
+					send left.checkAvail()
+				}
+			}
 			transition reask2L : pickedR -> pickedR {
 				triggeredBy left.notAvail()
-				action { send left.checkAvail() log logger with "reask2L" }}
+				action {
+					send left.checkAvail()
+					log logger with "reask2L"
+				}
+			}
 			transition pick2L : pickedR -> eat {
 				triggeredBy left.avail()
-				action { send left.pick() log logger with "pick2L"}}
-			state eat { entry { log logger with "eat"}}
-			state droppedLeft { entry { log logger with "droppedLeft"}}
-			state droppedRight { entry { log logger with "droppedRight"}}
+				action {
+					send left.pick()
+					log logger with "pick2L"
+				}
+			}
+			state eat {
+				entry {
+					log logger with "eat"
+				}
+			}
+			state droppedLeft {
+				entry {
+					log logger with "droppedLeft"
+				}
+			}
+			state droppedRight {
+				entry {
+					log logger with "droppedRight"
+				}
+			}
 			transition drop1L : eat -> droppedLeft {
-				action { send left.drop() log logger with "drop1L"}}
+				action {
+					send left.drop()
+					log logger with "drop1L"
+				}
+			}
 			transition drop1R : eat -> droppedRight {
-				action { send right.drop() log logger with "drop1R"}}
+				action {
+					send right.drop()
+					log logger with "drop1R"
+				}
+			}
 			transition drop2L : droppedRight -> think {
-				action { send left.drop()  log logger with "drop2L"}}
+				action {
+					send left.drop()
+					log logger with "drop2L"
+				}
+			}
 			transition drop2R : droppedLeft -> think {
-				action { send right.drop() log logger with "drop2R"}}
+				action {
+					send right.drop()
+					log logger with "drop2R"
+				}
+			}
 		}
 	}
 	capsule Fork {
@@ -69,25 +141,52 @@ model DiningPhilosopher2 {
 		external port ~right : PhilosopherForkProtocol
 		logPort logger
 		stateMachine {
-			transition init: initial -> down {}
-			state up { entry { log logger with "up"}}
-			state down { entry { log logger with "down"}}
+			transition init : initial -> down {
+			}
+			state up {
+				entry {
+					log logger with "up"
+				}
+			}
+			state down {
+				entry {
+					log logger with "down"
+				}
+			}
 			transition sendAvailL : down -> down {
 				triggeredBy left.checkAvail()
-				action { send left.avail() log logger with "sendAvailL"}}
+				action {
+					send left.avail()
+					log logger with "sendAvailL"
+				}
+			}
 			transition sendAvailR : down -> down {
 				triggeredBy right.checkAvail()
-				action { send right.avail() log logger with "sendAvailR"}}
+				action {
+					send right.avail()
+					log logger with "sendAvailR"
+				}
+			}
 			transition sendNotAvailL : up -> up {
 				triggeredBy left.checkAvail()
-				action { send left.notAvail() log logger with "sendNotAvailL"}}
+				action {
+					send left.notAvail()
+					log logger with "sendNotAvailL"
+				}
+			}
 			transition sendNotAvailR : up -> up {
 				triggeredBy right.checkAvail()
-				action { send right.notAvail() log logger with "sendNotAvailR"}}
+				action {
+					send right.notAvail()
+					log logger with "sendNotAvailR"
+				}
+			}
 			transition picked : down -> up {
-				triggeredBy left.pick() or right.pick()}
+				triggeredBy left.pick() or right.pick()
+			}
 			transition dropped : up -> down {
-				triggeredBy left.drop() or right.drop()}
+				triggeredBy left.drop() or right.drop()
+			}
 		}
 	}
 	protocol PhilosopherForkProtocol {
