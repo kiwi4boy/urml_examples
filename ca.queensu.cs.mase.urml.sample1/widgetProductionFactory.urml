@@ -4,7 +4,7 @@
  * 
  * Adapted from EE585 Notes, Ron Smith, 2001
  */
-model widgetProduction {
+model widgetManufacturing {
 
 /*
 	 * The top capsule, containing instances of other 

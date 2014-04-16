@@ -1,0 +1,127 @@
+
+model ConsumerProducer {
+	root capsule ConsumerProducer {
+		capsuleInstance c : Consumer
+		capsuleInstance p : Producer
+		capsuleInstance b : BoundedBuffer
+		connector c.toGet and b.consumer
+		connector p.toPut and b.producer
+	}
+	capsule Consumer {
+		external port toGet : BufferProtocol
+		logPort logger
+		stateMachine {
+			state single
+			transition : initial -> single {
+			}
+			transition : single -> single {
+				triggeredBy toGet.get(toDisplay)
+				action {
+					log logger with toDisplay
+				}
+			}
+		}
+	}
+	capsule Producer {
+		external port toPut : BufferProtocol
+		stateMachine {
+			state single {
+				entry {
+					var x := 1
+					while (x < 100) {
+						send toPut.put(x)
+					}
+				}
+			}
+			transition : initial -> single {
+			}
+		}
+	}
+	capsule BoundedBuffer {
+		attribute a := 0
+		attribute b := 0
+		attribute c := 0
+		attribute d := 0
+		attribute e := 0
+		external port ~consumer : BufferProtocol
+		external port ~producer : BufferProtocol
+		stateMachine {
+			state zero
+			state one
+			state two
+			state three
+			state four
+			state five
+			transition init : initial -> zero {
+			}
+			transition : zero -> one {
+				triggeredBy producer.put(data)
+				action {
+					a := data
+				}
+			}
+			transition : one -> two {
+				triggeredBy producer.put(data)
+				action {
+					b := data
+				}
+			}
+			transition : two -> three {
+				triggeredBy producer.put(data)
+				action {
+					c := data
+				}
+			}
+			transition : three -> four {
+				triggeredBy producer.put(data)
+				action {
+					d := data
+				}
+			}
+			transition : four -> five {
+				triggeredBy producer.put(data)
+				action {
+					e := data
+				}
+			}
+			transition : five -> four {
+				action {
+					send consumer.get(e)
+					e := 0
+				}
+			}
+			transition : four -> three {
+				action {
+					send consumer.get(d)
+					d := 0
+				}
+			}
+			transition : three -> two {
+				action {
+					send consumer.get(c)
+					c := 0
+				}
+			}
+			transition : two -> one {
+				action {
+					send consumer.get(b)
+					b := 0
+				}
+			}
+			transition : one -> zero {
+				action {
+					send consumer.get(a)
+					a := 0
+				}
+			}
+		}
+	}
+	protocol BufferProtocol {
+		incoming {
+			get(data)
+		}
+		outgoing {
+			put(data)
+		}
+	}
+}
