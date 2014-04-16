@@ -1,47 +1,47 @@
 /**
  * A simple example that consists of a producer and a consumer of a message.
  */
-model consumerProducer {
-	root capsule Top {
-		capsuleInstance p : Producer
-		capsuleInstance c : Consumer
-		connector p.port1 and c.port2
+model handshake {
+	root capsule Handshake {
+		capsuleInstance sender : Originator
+		capsuleInstance receiver : Receiver
+		connector sender.hand and receiver.hand
 	}
-	capsule Producer {
-		external port port1 : Comm
+	capsule Originator {
+		external port hand : HandshakeProtocol
 		logPort logger
 		stateMachine {
-			state x
-			final state y
-			transition t1 : initial -> x {
+			state start
+			final state end
+			transition init : initial -> start {
 			}
-			transition t2 : x -> y {
+			transition doHandShake : start -> end {
 				action {
-					send port1.message()
-					log logger with "sent ySignal to port1"
+					send hand.shake()
+					log logger with "sent a handshake"
 				}
 			}
 		}
 	}
-	capsule Consumer {
-		external port ~port2 : Comm
+	capsule Receiver {
+		external port ~hand : HandshakeProtocol
 		logPort logger
 		stateMachine {
-			state x
-			final state y
-			transition t2 : initial -> x {
+			state start
+			final state end
+			transition init : initial -> start {
 			}
-			transition t3 : x -> y {
-				triggeredBy port2.message()
+			transition receiveHandshake : start -> end {
+				triggeredBy hand.shake()
 				action {
-					log logger with "ySignal received from port2"
+					log logger with "received a handshake"
 				}
 			}
 		}
 	}
-	protocol Comm {
+	protocol HandshakeProtocol {
 		outgoing {
-			message()
+			shake()
 		}
 	}
 }
