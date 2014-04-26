@@ -31,23 +31,27 @@ model widgetManufacturing {
 		stateMachine {
 			transition init : initial -> startup {
 			}
-			state startup {
-				entry {
-					inform StartTimer in startUpDelay
-					inform StopTimer in systemStopTime
-					log CSLog with "CS: startup"
-				}
-			}
-			state produce {
-				entry {
-					send CS2WSPort.produceWidget()
-					log CSLog with "CS: produce"
-				}
-			}
-			state deliver {
-				entry {
-					send CS2RobotPort.deliverWidget()
-					log CSLog with "CS: deliver"
+			state on {
+				sub stateMachine {
+					state startup {
+						entry {
+							inform StartTimer in startUpDelay
+							inform StopTimer in systemStopTime
+							log CSLog with "CS: startup"
+						}
+					}
+					state produce {
+						entry {
+							send CS2WSPort.produceWidget()
+							log CSLog with "CS: produce"
+						}
+					}
+					state deliver {
+						entry {
+							send CS2RobotPort.deliverWidget()
+							log CSLog with "CS: deliver"
+						}
+					}
 				}
 			}
 			final state shutDown {
@@ -65,15 +69,16 @@ model widgetManufacturing {
 			transition goAgain : deliver -> produce {
 				triggeredBy CS2RobotPort.widgetDelivered()
 			}
-			transition stop1 : startup -> shutDown {
+			transition stop : on -> shutDown {
 				triggeredBy timeout StopTimer
 			}
-			transition stop2 : produce -> shutDown {
-				triggeredBy timeout StopTimer
-			}
-			transition stop3 : deliver -> shutDown {
-				triggeredBy timeout StopTimer
-			}
+			//			transition stop2 : produce -> shutDown {
+			//				triggeredBy timeout StopTimer
+			//			}
+			//			transition stop3 : deliver -> shutDown {
+			//				triggeredBy timeout StopTimer
+			//			}
+
 		}
 	}
 
@@ -94,15 +99,19 @@ model widgetManufacturing {
 		logPort WSLog
 		attribute widgetProductionTime := 3000
 		stateMachine {
-			state standby {
-				entry {
-					log WSLog with "WS: standby"
-				}
-			}
-			state producing {
-				entry {
-					inform ProductionTimer in widgetProductionTime
-					log WSLog with "WS: producing"
+			state on {
+				sub stateMachine {
+					state standby {
+						entry {
+							log WSLog with "WS: standby"
+						}
+					}
+					state producing {
+						entry {
+							inform ProductionTimer in widgetProductionTime
+							log WSLog with "WS: producing"
+						}
+					}
 				}
 			}
 			final state shutDown {
@@ -121,12 +130,13 @@ model widgetManufacturing {
 					send WS2CSPort.widgetProduced()
 				}
 			}
-			transition stop1 : producing -> shutDown {
+			transition stop : on -> shutDown {
 				triggeredBy WS2CSPort.shutDown()
 			}
-			transition stop2 : standby -> shutDown {
-				triggeredBy WS2CSPort.shutDown()
-			}
+			//			transition stop2 : standby -> shutDown {
+			//				triggeredBy WS2CSPort.shutDown()
+			//			}
+
 		}
 	}
 	capsule Robot {
@@ -135,15 +145,19 @@ model widgetManufacturing {
 		logPort RobotLog
 		attribute widgetDeliveringTime := 5000
 		stateMachine {
-			state standby {
-				entry {
-					log RobotLog with "Robot: standby"
-				}
-			}
-			state delivering {
-				entry {
-					inform DeliveryTimer in widgetDeliveringTime
-					log RobotLog with "Robot: delivering"
+			state on {
+				sub stateMachine {
+					state standby {
+						entry {
+							log RobotLog with "Robot: standby"
+						}
+					}
+					state delivering {
+						entry {
+							inform DeliveryTimer in widgetDeliveringTime
+							log RobotLog with "Robot: delivering"
+						}
+					}
 				}
 			}
 			final state shutDown {

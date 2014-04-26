@@ -28,8 +28,9 @@ model ConsumerProducer {
 			state single {
 				entry {
 					var x := 1
-					while (x < 100) {
+					while (x < 8) {
 						send toPut.put(x)
+						x := x + 1
 					}
 				}
 			}
@@ -55,33 +56,33 @@ model ConsumerProducer {
 			transition init : initial -> zero {
 			}
 			transition : zero -> one {
-				triggeredBy producer.put(data)
+				triggeredBy producer.put(a_)
 				action {
-					a := data
+					a := a_
 				}
 			}
 			transition : one -> two {
-				triggeredBy producer.put(data)
+				triggeredBy producer.put(b_)
 				action {
-					b := data
+					b := b_
 				}
 			}
 			transition : two -> three {
-				triggeredBy producer.put(data)
+				triggeredBy producer.put(c_)
 				action {
-					c := data
+					c := c_
 				}
 			}
 			transition : three -> four {
-				triggeredBy producer.put(data)
+				triggeredBy producer.put(d_)
 				action {
-					d := data
+					d := d_
 				}
 			}
 			transition : four -> five {
-				triggeredBy producer.put(data)
+				triggeredBy producer.put(e_)
 				action {
-					e := data
+					e := e_
 				}
 			}
 			transition : five -> four {
