@@ -7,7 +7,7 @@
  * of alternately blinking for 5 seconds and stop blinking for 5 seconds.
  */
 model Blinky {
-
+	 
 /*
 	 * The top of the model that consists of Blinky, the blinking yellow light,
 	 * and its controller, which coordinates the blink-and-stop cycle.
@@ -26,7 +26,7 @@ model Blinky {
 		external port connectToController : ControllerProtocol
 		timerPort onAndOff_Timer
 		logPort logger
-		attribute onAndOff_Period := 1000
+		attribute int onAndOff_Period := 1000
 
 		/*
 		 * This state machine describes the cycle alternating between 
@@ -80,7 +80,7 @@ model Blinky {
 	capsule Controller {
 		external port ~connectToLight : ControllerProtocol
 		timerPort blinkingCycleTimer
-		attribute blinkingCyclePeriod := 5000
+		attribute int blinkingCyclePeriod := 5000
 		logPort logger
 		stateMachine {
 			transition init : initial -> on {

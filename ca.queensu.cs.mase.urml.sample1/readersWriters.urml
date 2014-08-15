@@ -38,13 +38,13 @@ model ReadersWriters {
 		connector w1.write and db.write
 	}
 	capsule Controller {
-		attribute readers := 0
-		attribute writing := false
-		attribute w0waiting := false
-		attribute w1waiting := false
-		attribute r0waiting := false
-		attribute r1waiting := false
-		attribute r2waiting := false
+		attribute int  readers := 0
+		attribute bool writing := false
+		attribute  bool w0waiting := false
+		attribute  bool w1waiting := false
+		attribute  bool r0waiting := false
+		attribute  bool r1waiting := false
+		attribute  bool r2waiting := false
 		logPort logger
 		external port r0 : ControllerRW
 		external port r1 : ControllerRW
@@ -304,10 +304,10 @@ model ReadersWriters {
 	capsule Reader {
 		external port ~con : ControllerRW
 		external port read : ReadAndWriteThings
-		attribute readRequestSent := false
+		attribute  bool readRequestSent := false
 		timerPort timer
 		logPort logger
-		attribute timeoutPeriod := 200
+		attribute  int timeoutPeriod := 200
 		stateMachine {
 			state notReading
 			state reading {
@@ -347,10 +347,10 @@ model ReadersWriters {
 	capsule Writer {
 		external port ~con : ControllerRW
 		external port write : ReadAndWriteThings
-		attribute writeRequestSent := false
+		attribute  bool writeRequestSent := false
 		timerPort timer
 		logPort logger
-		attribute timeoutPeriod := 200
+		attribute int timeoutPeriod := 200
 		stateMachine {
 			state notWriting
 			state writing {
@@ -390,7 +390,7 @@ model ReadersWriters {
 		external port ~read : ReadAndWriteThings
 		external port ~write : ReadAndWriteThings
 		logPort logger
-		attribute thing := 1
+		attribute int thing := 1
 		stateMachine {
 			state single
 			transition init : initial -> single {
@@ -402,7 +402,7 @@ model ReadersWriters {
 				}
 			}
 			transition writeData : single -> single {
-				triggeredBy write.write(data)
+				triggeredBy write.write(int data)
 				action {
 					log logger with "original: " ^ thing
 					thing := data
@@ -427,7 +427,7 @@ model ReadersWriters {
 		}
 		outgoing {
 			read()
-			write(data)
+			write(int data)
 		}
 	}
 }

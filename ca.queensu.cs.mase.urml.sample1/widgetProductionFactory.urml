@@ -26,8 +26,8 @@ model widgetManufacturing {
 		timerPort StartTimer
 		timerPort StopTimer
 		logPort CSLog
-		attribute startUpDelay := 2000
-		attribute systemStopTime := 30000
+		attribute int startUpDelay := 2000
+		attribute int systemStopTime := 30000
 		stateMachine {
 			transition init : initial -> startup {
 			}
@@ -97,7 +97,7 @@ model widgetManufacturing {
 		external port ~WS2CSPort : WorkstationProtocol
 		timerPort ProductionTimer
 		logPort WSLog
-		attribute widgetProductionTime := 3000
+		attribute int widgetProductionTime := 3000
 		stateMachine {
 			state on {
 				sub stateMachine {
@@ -143,7 +143,7 @@ model widgetManufacturing {
 		external port ~Robot2CSPort : RobotProtocol
 		timerPort DeliveryTimer
 		logPort RobotLog
-		attribute widgetDeliveringTime := 5000
+		attribute int widgetDeliveringTime := 5000
 		stateMachine {
 			state on {
 				sub stateMachine {

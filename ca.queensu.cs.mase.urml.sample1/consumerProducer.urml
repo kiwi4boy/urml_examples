@@ -1,5 +1,5 @@
 
-model ConsumerProducer {
+model ConsumerProducer { 
 	root capsule ConsumerProducer {
 		capsuleInstance c : Consumer
 		capsuleInstance p : Producer
@@ -15,7 +15,7 @@ model ConsumerProducer {
 			transition : initial -> single {
 			}
 			transition : single -> single {
-				triggeredBy toGet.get(toDisplay)
+				triggeredBy toGet.get(int toDisplay)
 				action {
 					log logger with toDisplay
 				}
@@ -27,7 +27,7 @@ model ConsumerProducer {
 		stateMachine {
 			state single {
 				entry {
-					var x := 1
+					var int x := 1
 					while (x < 8) {
 						send toPut.put(x)
 						x := x + 1
@@ -39,11 +39,11 @@ model ConsumerProducer {
 		}
 	}
 	capsule BoundedBuffer {
-		attribute a := 0
-		attribute b := 0
-		attribute c := 0
-		attribute d := 0
-		attribute e := 0
+		attribute int a := 0
+		attribute int b := 0
+		attribute int c := 0
+		attribute int d := 0
+		attribute int e := 0
 		external port ~consumer : BufferProtocol
 		external port ~producer : BufferProtocol
 		stateMachine {
@@ -56,31 +56,31 @@ model ConsumerProducer {
 			transition init : initial -> zero {
 			}
 			transition : zero -> one {
-				triggeredBy producer.put(a_)
+				triggeredBy producer.put(int a_)
 				action {
 					a := a_
 				}
 			}
 			transition : one -> two {
-				triggeredBy producer.put(b_)
+				triggeredBy producer.put(int b_)
 				action {
 					b := b_
 				}
 			}
 			transition : two -> three {
-				triggeredBy producer.put(c_)
+				triggeredBy producer.put(int c_)
 				action {
 					c := c_
 				}
 			}
 			transition : three -> four {
-				triggeredBy producer.put(d_)
+				triggeredBy producer.put(int d_)
 				action {
 					d := d_
 				}
 			}
 			transition : four -> five {
-				triggeredBy producer.put(e_)
+				triggeredBy producer.put(int e_)
 				action {
 					e := e_
 				}
@@ -119,10 +119,10 @@ model ConsumerProducer {
 	}
 	protocol BufferProtocol {
 		incoming {
-			get(data)
+			get(int data)
 		}
 		outgoing {
-			put(data)
+			put(int data)
 		}
 	}
 }

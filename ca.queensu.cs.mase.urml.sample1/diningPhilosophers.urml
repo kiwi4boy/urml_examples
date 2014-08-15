@@ -67,11 +67,11 @@ model DiningPhilosophers {
 		/* Boolean value that specifies that the philosopher on the left side of the
 		 * fork is waiting.
 		 */
-		attribute leftWaiting := false
+		attribute bool leftWaiting := false
 		/* Boolean value that specifies that the philosopher on the right side of the
 		 * fork is waiting
 		 */
-		attribute rightWaiting := false
+		attribute bool rightWaiting := false
 		stateMachine {
 			state down {
 				entry {
@@ -164,10 +164,10 @@ model DiningPhilosophers {
 	 * right fork. 
 	 */
 	capsule Philosopher {
-		attribute id := -1
-		attribute delayTimeout := 300
-		attribute eatTimeout := 600
-		attribute thinkTimeout := 600
+		attribute int id := -1
+		attribute int delayTimeout := 300
+		attribute int eatTimeout := 600
+		attribute int thinkTimeout := 600
 		external port left : PhilosopherForkProtocol
 		external port right : PhilosopherForkProtocol
 		external port ~signer : RingPhilosopherProtocol
@@ -175,10 +175,10 @@ model DiningPhilosophers {
 		timerPort eatTimer
 		timerPort thinkTimer
 		timerPort delayTimer
-		operation isEvenPhil() {
+		operation int isEvenPhil() {
 			return id % 2 == 0
 		}
-		operation setID(id_) {
+		operation void setID(int id_) {
 			id := id_
 		}
 		stateMachine {
@@ -233,7 +233,7 @@ model DiningPhilosophers {
 			transition init : initial -> start {
 			}
 			transition setPhilID : start -> delay {
-				triggeredBy signer.sign(num)
+				triggeredBy signer.sign(int num)
 				action {
 					call setID(num)
 				}
@@ -300,7 +300,7 @@ model DiningPhilosophers {
 		incoming {
 		}
 		outgoing {
-			sign(id)
+			sign(int id)
 		}
 	}
 }

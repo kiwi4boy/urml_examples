@@ -16,7 +16,7 @@ model ParcelRouter {
 		}
 		outgoing {
 		// leftNotRight is a boolean: if true, then the 
-			sendDirection(leftNotRight)
+			sendDirection(bool leftNotRight)
 		}
 	}
 	/*
@@ -24,16 +24,16 @@ model ParcelRouter {
 	 */
 	protocol ParcelPassage {
 		incoming {
-		}
+		} 
 		outgoing {
-			sendParcel(destinationCode)
+			sendParcel(int destinationCode)
 		}
 	}
 	protocol LevelNumberProtocol {
 		incoming {
 		}
 		outgoing {
-			sendLevelNumber(level)
+			sendLevelNumber(int level)
 		}
 	}
 	/*
@@ -90,8 +90,8 @@ model ParcelRouter {
 		external port gettingOut : ParcelPassage
 		timerPort timer
 		logPort logger
-		attribute timeoutPeriod := 1000
-		attribute destinationId := 1
+		attribute int timeoutPeriod := 10000
+		attribute int destinationId := 1
 		//		attribute sent := false
 		stateMachine {
 			state single
@@ -124,7 +124,7 @@ model ParcelRouter {
 		external port ~fromTop : LevelNumberProtocol
 		port toSensorController : LevelNumberProtocol
 		logPort logger
-		attribute level
+		attribute int level
 		capsuleInstance chute0 : Chute
 		capsuleInstance chute1 : Chute
 		capsuleInstance sensorCntl : SensorController
@@ -143,7 +143,7 @@ model ParcelRouter {
 			transition init : initial -> single {
 			}
 			transition setLevelNumber : single -> single {
-				triggeredBy fromTop.sendLevelNumber(levelNumber)
+				triggeredBy fromTop.sendLevelNumber(int levelNumber)
 				action {
 					level := levelNumber
 					send toSensorController.sendLevelNumber(levelNumber)
@@ -153,14 +153,14 @@ model ParcelRouter {
 	}
 	capsule Bin {
 		external port ~goingIn : ParcelPassage
-		attribute numOfParcels := 0
+		attribute int numOfParcels := 0
 		logPort logger
 		stateMachine {
 			state single
 			transition init : initial -> single {
 			}
 			transition sending : single -> single {
-				triggeredBy goingIn.sendParcel(designatedBin)
+				triggeredBy goingIn.sendParcel(int designatedBin)
 				action {
 					numOfParcels := numOfParcels + 1
 					log logger with "Bin: a parcel with id " ^ designatedBin ^ " has entered bin"
@@ -175,21 +175,21 @@ model ParcelRouter {
 		external port toControl : ParcelPassage
 		logPort logger
 		timerPort timer
-		attribute storedParcelDestination := -1
-		attribute timeoutPeriod := 2000
+		attribute int storedParcelDestination := -1
+		attribute int timeoutPeriod := 1000
 		stateMachine {
 			state empty
 			state entered
 			transition init : initial -> empty {
 			}
 			transition pass1 : empty -> empty {
-				triggeredBy dummy.sendParcel(destination)
+				triggeredBy dummy.sendParcel(int destination)
 			}
 			transition pass2 : entered -> entered {
-				triggeredBy dummy.sendParcel(destination)
+				triggeredBy dummy.sendParcel(int destination)
 			}
 			transition parcelEnters : empty -> entered {
-				triggeredBy enter.sendParcel(destination)
+				triggeredBy enter.sendParcel(int destination)
 				action {
 					storedParcelDestination := destination
 					log logger with "Chute: received to destination " ^ destination
@@ -215,28 +215,28 @@ model ParcelRouter {
 		external port leaveRight : ParcelPassage
 		timerPort timer
 		logPort logger
-		attribute leftNotRight := true
-		attribute timeoutPeriod := 2000
-		attribute storedParcelDestination := -1
+		attribute bool leftNotRight := true
+		attribute int timeoutPeriod := 2000
+		attribute int storedParcelDestination := -1
 		stateMachine {
 			state empty
 			state entered
 			transition init : initial -> empty {
 			}
 			transition setDirectionWhileEmpty : empty -> empty {
-				triggeredBy setSwitch.sendDirection(direction)
+				triggeredBy setSwitch.sendDirection(bool direction)
 				action {
 					leftNotRight := direction
 				}
 			}
 			transition setDirectionWhileEntered : entered -> entered {
-				triggeredBy setSwitch.sendDirection(direction)
+				triggeredBy setSwitch.sendDirection(bool direction)
 				action {
 					leftNotRight := direction
 				}
 			}
 			transition parcelEnters : empty -> entered {
-				triggeredBy enter.sendParcel(destination)
+				triggeredBy enter.sendParcel(int destination)
 				action {
 					storedParcelDestination := destination
 					log logger with "Switch: parcel entered, sending to " ^ destination
@@ -259,10 +259,10 @@ model ParcelRouter {
 		external port ~sense : ParcelPassage
 		external port setSwitch : SensorProtocol
 		external port ~fromStage : LevelNumberProtocol
-		attribute level
+		attribute int level
 		// key = destination << level & 1
-		operation leftShiftAndBitmask(destination, level) {
-			var counter := 0
+		operation int leftShiftAndBitmask(int destination, int level) {
+			var int counter := 0
 			while (counter < level) {
 				destination := destination / 2
 				counter := counter + 1
@@ -278,13 +278,13 @@ model ParcelRouter {
 			transition init : initial -> single {
 			}
 			transition setLevelNumber : single -> single {
-				triggeredBy fromStage.sendLevelNumber(levelNumber)
+				triggeredBy fromStage.sendLevelNumber(int levelNumber)
 				action {
 					level := levelNumber
 				}
 			}
 			transition senseParcel : single -> single {
-				triggeredBy sense.sendParcel(destination)
+				triggeredBy sense.sendParcel(int destination)
 				action {
 					send setSwitch.sendDirection(leftShiftAndBitmask(destination, level) != 0)
 				}
