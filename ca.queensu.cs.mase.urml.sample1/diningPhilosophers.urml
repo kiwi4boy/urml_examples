@@ -175,7 +175,7 @@ model DiningPhilosophers {
 		timerPort eatTimer
 		timerPort thinkTimer
 		timerPort delayTimer
-		operation int isEvenPhil() {
+		operation bool isEvenPhil() {
 			return id % 2 == 0
 		}
 		operation void setID(int id_) {
